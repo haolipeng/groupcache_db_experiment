@@ -34,8 +34,11 @@ func NewServer(db *slowdb.SlowDB) *Server {
 }
 
 func (s *Server) Start(port string) {
-
-	rpc.Register(s)
+	err := rpc.Register(s)
+	if err != nil {
+		fmt.Println("dbserver rpc Register() failed!")
+		return
+	}
 
 	rpc.HandleHTTP()
 	l, e := net.Listen("tcp", port)
@@ -43,7 +46,11 @@ func (s *Server) Start(port string) {
 		fmt.Println("fatal")
 	}
 
-	http.Serve(l, nil)
+	err = http.Serve(l, nil)
+	if err != nil {
+		fmt.Println("dbserver http Serve() failed!")
+		return
+	}
 }
 
 func main() {

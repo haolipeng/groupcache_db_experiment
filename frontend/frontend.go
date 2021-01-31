@@ -67,7 +67,7 @@ func main() {
 	var stringcache = groupcache.NewGroup("SlowDBCache", 64<<20, groupcache.GetterFunc(
 		func(ctx context.Context, key string, dest groupcache.Sink) error {
 			result := c.Get(key)
-			fmt.Printf("asking for %s from dbserver\n", key)
+			fmt.Printf("cache missing,asking for %s from dbserver\n", key)
 			dest.SetBytes([]byte(result))
 			return nil
 		}))

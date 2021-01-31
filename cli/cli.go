@@ -11,9 +11,9 @@ import (
 func main() {
 
 	var port = flag.String("port", "9001", "frontend port")
-	var set = flag.Bool("set", true, "doing a set?")
+	var set = flag.Bool("set", false, "doing a set?")
 	var get = flag.Bool("get", false, "doing a get?")
-	var cacheGet = flag.Bool("cget", false, "doing a cache get?")
+	var cacheGet = flag.Bool("cget", true, "doing a cache get?")
 	var key = flag.String("key", "foo", "key to get")
 	var value = flag.String("value", "bar", "value to set")
 	flag.Parse()
