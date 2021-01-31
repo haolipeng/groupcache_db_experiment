@@ -23,8 +23,7 @@ type Frontend struct {
 func (s *Frontend) Get(args *api.Load, reply *api.ValueResult) error {
 	var data []byte
 	fmt.Printf("cli asked for %s from groupcache\n", args.Key)
-	err := s.cacheGroup.Get(nil, args.Key,
-		groupcache.AllocatingByteSliceSink(&data))
+	err := s.cacheGroup.Get(context.TODO(), args.Key, groupcache.AllocatingByteSliceSink(&data))
 
 	reply.Value = string(data)
 	return err
@@ -37,8 +36,11 @@ func NewServer(cacheGroup *groupcache.Group) *Frontend {
 }
 
 func (s *Frontend) Start(port string) {
-
-	rpc.Register(s)
+	err := rpc.Register(s)
+	if err != nil {
+		fmt.Println("Frontend rpc Register() failed!")
+		return
+	}
 
 	rpc.HandleHTTP()
 	l, e := net.Listen("tcp", port)
@@ -46,7 +48,11 @@ func (s *Frontend) Start(port string) {
 		fmt.Println("fatal")
 	}
 
-	http.Serve(l, nil)
+	err = http.Serve(l, nil)
+	if err != nil {
+		fmt.Println("Frontend http Serve() failed!")
+		return
+	}
 }
 
 func main() {
@@ -56,11 +62,11 @@ func main() {
 
 	peers := groupcache.NewHTTPPool("http://localhost:" + *port)
 
-	client := new(client.Client)
+	c := new(client.Client)
 
 	var stringcache = groupcache.NewGroup("SlowDBCache", 64<<20, groupcache.GetterFunc(
 		func(ctx context.Context, key string, dest groupcache.Sink) error {
-			result := client.Get(key)
+			result := c.Get(key)
 			fmt.Printf("asking for %s from dbserver\n", key)
 			dest.SetBytes([]byte(result))
 			return nil
@@ -82,6 +88,8 @@ func main() {
 	fmt.Println(stringcache)
 	fmt.Println("cachegroup slave starting on " + *port)
 	fmt.Println("frontend starting on " + frontEndport)
-	http.ListenAndServe("127.0.0.1:"+*port, http.HandlerFunc(peers.ServeHTTP))
-
+	err = http.ListenAndServe("127.0.0.1:"+*port, http.HandlerFunc(peers.ServeHTTP))
+	if err != nil {
+		fmt.Printf("frontend http.ListenAndServe() failed:%s\n", err.Error())
+	}
 }
